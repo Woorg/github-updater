@@ -220,10 +220,10 @@ class Settings extends Base {
 				<?php endif; ?>
 
 				<?php if ( 'github_updater_settings' === $tab ) : ?>
+					<?php $this->options_sub_tabs(); ?>
 					<form method="post" action="<?php esc_attr_e( $action ); ?>">
 						<?php
 						settings_fields( 'github_updater' );
-						$this->options_sub_tabs();
 						switch ( $subtab ) {
 							case 'github_updater':
 								do_settings_sections( 'github_updater_install_settings' );

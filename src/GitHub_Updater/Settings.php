@@ -68,7 +68,6 @@ class Settings extends Base {
 	 * By defining in a method, strings can be translated.
 	 *
 	 * @access private
-	 *
 	 * @return array
 	 */
 	private function settings_tabs() {
@@ -80,13 +79,56 @@ class Settings extends Base {
 		);
 	}
 
+	/**
+	 * Set up the Settings Sub-tabs.
+	 *
+	 * @access private
+	 * @return array
+	 */
 	private function settings_sub_tabs() {
-		return array(
+		$subtabs          = array();
+		$gits             = $this->installed_git_repos();
+		$default_subtabs  = array(
 			'github_updater' => esc_html__( 'GitHub Updater', 'github-updater' ),
 			'github'         => esc_html__( 'GitHub', 'github-updater' ),
-			'bitbucket'      => esc_html__( 'Bitbucket', 'github-updater' ),
-			'gitlab'         => esc_html__( 'GitLab', 'github-updater' ),
 		);
+		$bitbucket_subtab = array( 'bitbucket' => esc_html__( 'Bitbucket', 'github-updater' ) );
+		$gitlab_subtab    = array( 'gitlab' => esc_html__( 'GitLab', 'github-updater' ) );
+		if ( in_array( 'bitbucket', $gits ) ) {
+			$subtabs = array_merge( $subtabs, $bitbucket_subtab );
+		}
+		if ( in_array( 'gitlab', $gits ) ) {
+			$subtabs = array_merge( $subtabs, $gitlab_subtab );
+		}
+
+		return array_merge( $default_subtabs, $subtabs );
+	}
+
+	/**
+	 * Return an array of the installed repository types.
+	 *
+	 * @access private
+	 * @return array
+	 */
+	private function installed_git_repos() {
+		$plugins = Plugin::instance()->get_plugin_configs();
+		$themes  = Theme::instance()->get_theme_configs();
+
+		$repos = array_merge( $plugins, $themes );
+		$gits  = array_map( function( $e ) {
+			return $e->type;
+		}, $repos );
+
+		$gits = array_unique( array_values( $gits ) );
+
+		$gits = array_map( function( $e ) {
+			$e = explode( '_', $e );
+
+			return $e[0];
+		}, $gits );
+
+
+		return array_unique( $gits );
 	}
 
 	/**
@@ -131,6 +173,11 @@ class Settings extends Base {
 		echo '</h2>';
 	}
 
+	/**
+	 * Render the settings sub-tabs.
+	 *
+	 * @access private
+	 */
 	private function options_sub_tabs() {
 		$current_tab = isset( $_GET['subtab'] ) ? $_GET['subtab'] : 'github_updater';
 		echo '<h3 class="nav-tab-wrapper">';
@@ -179,26 +226,44 @@ class Settings extends Base {
 						$this->options_sub_tabs();
 						switch ( $subtab ) {
 							case 'github_updater':
-								$refresh_transients = add_query_arg( array( 'github_updater_refresh_transients' => true ), $action );
-								?>
-								<form method="post" action="<?php esc_attr_e( $refresh_transients ); ?>">
-									<?php submit_button( esc_html__( 'Refresh Transients', 'github-updater' ) ); ?>
-								</form>
-								<?php
 								do_settings_sections( 'github_updater_install_settings' );
+								echo '<div style="display:none;">';
+								do_settings_sections( 'github_updater_github_install_settings' );
+								do_settings_sections( 'github_updater_bitbucket_install_settings' );
+								do_settings_sections( 'github_updater_gitlab_install_settings' );
+								echo '</div>';
 								break;
 							case 'github':
 								do_settings_sections( 'github_updater_github_install_settings' );
+								echo '<div style="display:none;">';
+								do_settings_sections( 'github_updater_install_settings' );
+								do_settings_sections( 'github_updater_bitbucket_install_settings' );
+								do_settings_sections( 'github_updater_gitlab_install_settings' );
+								echo '</div>';
 								break;
 							case 'bitbucket':
 								do_settings_sections( 'github_updater_bitbucket_install_settings' );
+								echo '<div style="display:none;">';
+								do_settings_sections( 'github_updater_install_settings' );
+								do_settings_sections( 'github_updater_github_install_settings' );
+								do_settings_sections( 'github_updater_gitlab_install_settings' );
+								echo '</div>';
 								break;
 							case 'gitlab':
 								do_settings_sections( 'github_updater_gitlab_install_settings' );
+								echo '<div style="display:none;">';
+								do_settings_sections( 'github_updater_install_settings' );
+								do_settings_sections( 'github_updater_github_install_settings' );
+								do_settings_sections( 'github_updater_bitbucket_install_settings' );
+								echo '</div>';
 								break;
 						}
 						submit_button();
 						?>
+					</form>
+					<?php $refresh_transients = add_query_arg( array( 'github_updater_refresh_transients' => true ), $action ); ?>
+					<form method="post" action="<?php esc_attr_e( $refresh_transients ); ?>">
+						<?php submit_button( esc_html__( 'Refresh Transients', 'github-updater' ) ); ?>
 					</form>
 				<?php endif; ?>
 			<?php endif; ?>

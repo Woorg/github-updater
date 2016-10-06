@@ -278,16 +278,17 @@ class Settings extends Base {
 			?>
 			<?php if ( 'github_updater_remote_management' === $tab ) : ?>
 				<?php $action = add_query_arg( 'tab', $tab, $action ); ?>
-				<?php $reset_api_action = add_query_arg( array( 'github_updater_reset_api_key' => true ), $action ); ?>
-				<form method="post" action="<?php esc_attr_e( $reset_api_action ); ?>">
-					<?php submit_button( esc_html__( 'Reset RESTful key', 'github-updater' ) ); ?>
-				</form>
+
 				<form method="post" action="<?php esc_attr_e( $action ); ?>">
 					<?php
 					settings_fields( 'github_updater_remote_management' );
 					do_settings_sections( 'github_updater_remote_settings' );
 					submit_button();
 					?>
+				</form>
+				<?php $reset_api_action = add_query_arg( array( 'github_updater_reset_api_key' => true ), $action ); ?>
+				<form method="post" action="<?php esc_attr_e( $reset_api_action ); ?>">
+					<?php submit_button( esc_html__( 'Reset RESTful key', 'github-updater' ) ); ?>
 				</form>
 			<?php endif; ?>
 		</div>

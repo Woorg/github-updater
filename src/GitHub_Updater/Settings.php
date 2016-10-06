@@ -82,12 +82,13 @@ class Settings extends Base {
 
 	private function settings_sub_tabs() {
 		return array(
-			'github_updater' => esc_html__('GitHub Updater', 'github-updater'),
-			'github' => esc_html__('GitHub', 'github-updater'),
-			'bitbucket' => esc_html__('Bitbucket', 'github-updater'),
-			'gitlab' => esc_html__('GitLab', 'github-updater'),
+			'github_updater' => esc_html__( 'GitHub Updater', 'github-updater' ),
+			'github'         => esc_html__( 'GitHub', 'github-updater' ),
+			'bitbucket'      => esc_html__( 'Bitbucket', 'github-updater' ),
+			'gitlab'         => esc_html__( 'GitLab', 'github-updater' ),
 		);
 	}
+
 	/**
 	 * Add options page.
 	 */
@@ -131,7 +132,7 @@ class Settings extends Base {
 	}
 
 	private function options_sub_tabs() {
-		$current_tab = isset( $_GET['subtab'] ) ? $_GET['subtab'] : 'github';
+		$current_tab = isset( $_GET['subtab'] ) ? $_GET['subtab'] : 'github_updater';
 		echo '<h3 class="nav-tab-wrapper">';
 		foreach ( $this->settings_sub_tabs() as $key => $name ) {
 			$active = ( $current_tab == $key ) ? 'nav-tab-active' : '';
@@ -147,7 +148,7 @@ class Settings extends Base {
 	public function create_admin_page() {
 		$action = is_multisite() ? 'edit.php?action=github-updater' : 'options.php';
 		$tab    = isset( $_GET['tab'] ) ? $_GET['tab'] : 'github_updater_settings';
-		$subtab = isset( $_GET['subtab']) ? $_GET['subtab'] : 'github';
+		$subtab = isset( $_GET['subtab'] ) ? $_GET['subtab'] : 'github_updater';
 		$logo   = plugins_url( basename( dirname( dirname( __DIR__ ) ) ) . '/assets/GitHub_Updater_logo_small.png' );
 		?>
 		<div class="wrap">
@@ -172,17 +173,16 @@ class Settings extends Base {
 				<?php endif; ?>
 
 				<?php if ( 'github_updater_settings' === $tab ) : ?>
-					<?php $refresh_transients = add_query_arg( array( 'github_updater_refresh_transients' => true ), $action ); ?>
-
 					<form method="post" action="<?php esc_attr_e( $action ); ?>">
 						<?php
 						settings_fields( 'github_updater' );
 						$this->options_sub_tabs();
 						switch ( $subtab ) {
 							case 'github_updater':
+								$refresh_transients = add_query_arg( array( 'github_updater_refresh_transients' => true ), $action );
 								?>
 								<form method="post" action="<?php esc_attr_e( $refresh_transients ); ?>">
-						<?php submit_button( esc_html__( 'Refresh Transients', 'github-updater' ) ); ?>
+									<?php submit_button( esc_html__( 'Refresh Transients', 'github-updater' ) ); ?>
 								</form>
 								<?php
 								do_settings_sections( 'github_updater_install_settings' );
@@ -382,15 +382,23 @@ class Settings extends Base {
 		/*
 		 * Show if no private repositories are present.
 		 */
-		$subtab = isset( $_GET['subtab']) ? $_GET['subtab'] : 'github';
-		if ( ! parent::$auth_required['github_private'] || ! parent::$auth_required['bitbucket_private'] ) {
+		if ( ! parent::$auth_required['github_private'] ) {
 			add_settings_section(
 				null,
 				esc_html__( 'No private repositories are installed.', 'github-updater' ),
 				array(),
-				'github_updater_'.$subtab.'_install_settings'
+				'github_updater_github_install_settings'
 			);
 		}
+		if ( ! parent::$auth_required['bitbucket_private'] ) {
+			add_settings_section(
+				null,
+				esc_html__( 'No private repositories are installed.', 'github-updater' ),
+				array(),
+				'github_updater_bitbucket_install_settings'
+			);
+		}
+
 
 		$this->update_settings();
 	}
@@ -476,19 +484,19 @@ class Settings extends Base {
 			$token_type = explode( '_', $token->type );
 			switch ( $token_type[0] ) {
 				case 'github':
-					$setting_field['page']  = 'github_updater_github_install_settings';
+					$setting_field['page']            = 'github_updater_github_install_settings';
 					$setting_field['section']         = 'github_id';
 					$setting_field['callback_method'] = array( &$this, 'token_callback_text' );
 					$setting_field['callback']        = $token->repo;
 					break;
 				case 'bitbucket':
-					$setting_field['page']  = 'github_updater_bitbucket_install_settings';
+					$setting_field['page']            = 'github_updater_bitbucket_install_settings';
 					$setting_field['section']         = 'bitbucket_id';
 					$setting_field['callback_method'] = array( &$this, 'token_callback_checkbox' );
 					$setting_field['callback']        = $token->repo;
 					break;
 				case 'gitlab':
-					$setting_field['page']  = 'github_updater_gitlab_install_settings';
+					$setting_field['page']            = 'github_updater_gitlab_install_settings';
 					$setting_field['section']         = 'gitlab_id';
 					$setting_field['callback_method'] = array( &$this, 'token_callback_checkbox' );
 					$setting_field['callback']        = $token->repo;

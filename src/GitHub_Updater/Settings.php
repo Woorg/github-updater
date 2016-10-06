@@ -548,7 +548,6 @@ class Settings extends Base {
 
 			$setting_field['id']    = $token->repo;
 			$setting_field['title'] = $type . $token->name;
-			//$setting_field['page']  = 'github_updater_install_settings';
 
 			$token_type = explode( '_', $token->type );
 			switch ( $token_type[0] ) {
@@ -587,8 +586,9 @@ class Settings extends Base {
 		 */
 		$ghu_unset_keys = array_diff_key( parent::$options, $ghu_options_keys );
 		$always_unset   = array(
-			'github_access_token',
 			'branch_switch',
+			'github_access_token',
+			'github_enterprise_token',
 			'bitbucket_username',
 			'bitbucket_password',
 		);
@@ -797,13 +797,50 @@ class Settings extends Base {
 	public function update_settings() {
 		if ( isset( $_POST['option_page'] ) ) {
 			if ( 'github_updater' === $_POST['option_page'] ) {
-				update_site_option( 'github_updater', self::sanitize( $_POST['github_updater'] ) );
+				$options = $this->filter_options();
+				update_site_option( 'github_updater', self::sanitize( $options ) );
 			}
 			if ( 'github_updater_remote_management' === $_POST['option_page'] ) {
 				update_site_option( 'github_updater_remote_management', (array) self::sanitize( $_POST['github_updater_remote_management'] ) );
 			}
 		}
 		$this->redirect_on_save();
+	}
+
+	/**
+	 * Filter options so that sub-tab options are grouped in single $options variable.
+	 *
+	 * @access private
+	 * @return array|mixed
+	 */
+	private function filter_options() {
+		$plugins          = Plugin::instance()->get_plugin_configs();
+		$themes           = Theme::instance()->get_theme_configs();
+		$repos            = array_merge( $plugins, $themes );
+		$options          = parent::$options;
+		$non_repo_options = array(
+			'github_access_token',
+			'bitbucket_username',
+			'bitbucket_password',
+			'gitlab_private_token',
+			'gitlab_enterprise_token',
+			'branch_switch',
+		);
+
+		$repos = array_map( function( $e ) {
+			return $e->repo = null;
+		}, $repos );
+
+		array_filter( $non_repo_options,
+			function( $e ) use ( &$options ) {
+				unset( $options[ $e ] );
+			}
+		);
+
+		$intersect = array_intersect( $options, $repos );
+		$options   = array_merge( $intersect, $_POST['github_updater'] );
+
+		return $options;
 	}
 
 	/**
@@ -827,12 +864,14 @@ class Settings extends Base {
 		if ( $update || $refresh_transients || $reset_api_key ) {
 			$query = isset( $_POST['_wp_http_referer'] ) ? parse_url( $_POST['_wp_http_referer'], PHP_URL_QUERY ) : null;
 			parse_str( $query, $arr );
-			$arr['tab'] = ! empty( $arr['tab'] ) ? $arr['tab'] : 'github_updater_settings';
+			$arr['tab']    = ! empty( $arr['tab'] ) ? $arr['tab'] : 'github_updater_settings';
+			$arr['subtab'] = ! empty( $arr['subtab'] ) ? $arr['subtab'] : 'github_updater';
 
 			$location = add_query_arg(
 				array(
 					'page'               => 'github-updater',
 					'tab'                => $arr['tab'],
+					'subtab'             => $arr['subtab'],
 					'refresh_transients' => $refresh_transients,
 					'reset'              => $reset_api_key,
 					'updated'            => $update,

@@ -300,6 +300,10 @@ class Settings extends Base {
 	 */
 	public function page_init() {
 
+		if ( $this->is_doing_ajax() ) {
+			return;
+		}
+
 		register_setting(
 			'github_updater',           // Option group
 			'github_updater',           // Option name
